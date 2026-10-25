@@ -1,0 +1,225 @@
+### 1. Arranque (base de datos propia de la evidencia)
+### 2. Inventario precargado
+$ curl -X GET /api/inventario
+{
+  "zona_horaria": "America/Argentina/Buenos_Aires",
+  "formato": "AAAA-MM-DDTHH:MM",
+  "unidades": [
+    {
+      "id": "MIC-01",
+      "equipo": "Microscopio digital"
+    },
+    {
+      "id": "MIC-02",
+      "equipo": "Microscopio digital"
+    },
+    {
+      "id": "OSC-01",
+      "equipo": "Osciloscopio"
+    },
+    {
+      "id": "MUL-01",
+      "equipo": "Multímetro"
+    },
+    {
+      "id": "FUE-01",
+      "equipo": "Fuente de alimentación"
+    }
+  ]
+}
+[HTTP 200]
+
+### 3. Disponibilidad inicial (MIC-01 10:00-11:00)
+$ curl -X GET /api/disponibilidad?unidad=MIC-01&inicio=2030-06-10T10:00&fin=2030-06-10T11:00
+{
+  "unidad": {
+    "id": "MIC-01",
+    "equipo": "Microscopio digital"
+  },
+  "inicio": "2030-06-10T10:00:00-03:00",
+  "fin": "2030-06-10T11:00:00-03:00",
+  "disponible": true,
+  "conflictos": []
+}
+[HTTP 200]
+
+### 4. Crear reserva válida (espera HTTP 201)
+$ curl -X POST /api/reservas -d {"unidad":"MIC-01","solicitante":"Ana Díaz","inicio":"2030-06-10T10:00","fin":"2030-06-10T11:00"}
+{
+  "reserva": {
+    "id": 1,
+    "unidad": "MIC-01",
+    "solicitante": "Ana Díaz",
+    "inicio": "2030-06-10T10:00:00-03:00",
+    "fin": "2030-06-10T11:00:00-03:00",
+    "estado": "activa",
+    "creada_en": "2026-10-25T16:56:05-03:00",
+    "cancelada_en": null
+  }
+}
+[HTTP 201]
+
+### 5. Superposición 10:30-11:30 (espera HTTP 409 SUPERPOSICION)
+$ curl -X POST /api/reservas -d {"unidad":"MIC-01","solicitante":"Carla Nuñez","inicio":"2030-06-10T10:30","fin":"2030-06-10T11:30"}
+{
+  "error": {
+    "codigo": "SUPERPOSICION",
+    "mensaje": "La unidad MIC-01 ya está reservada de 2030-06-10T10:00:00-03:00 a 2030-06-10T11:00:00-03:00 (reserva #1, Ana Díaz)."
+  }
+}
+[HTTP 409]
+
+### 6. Límite consecutivo 11:00-12:00 (espera HTTP 201)
+$ curl -X POST /api/reservas -d {"unidad":"MIC-01","solicitante":"Bruno Sáez","inicio":"2030-06-10T11:00","fin":"2030-06-10T12:00"}
+{
+  "reserva": {
+    "id": 2,
+    "unidad": "MIC-01",
+    "solicitante": "Bruno Sáez",
+    "inicio": "2030-06-10T11:00:00-03:00",
+    "fin": "2030-06-10T12:00:00-03:00",
+    "estado": "activa",
+    "creada_en": "2026-10-25T16:56:05-03:00",
+    "cancelada_en": null
+  }
+}
+[HTTP 201]
+
+### 7. MIC-02 en el mismo intervalo de MIC-01 (espera HTTP 201)
+$ curl -X POST /api/reservas -d {"unidad":"MIC-02","solicitante":"Carla Nuñez","inicio":"2030-06-10T10:00","fin":"2030-06-10T11:00"}
+{
+  "reserva": {
+    "id": 3,
+    "unidad": "MIC-02",
+    "solicitante": "Carla Nuñez",
+    "inicio": "2030-06-10T10:00:00-03:00",
+    "fin": "2030-06-10T11:00:00-03:00",
+    "estado": "activa",
+    "creada_en": "2026-10-25T16:56:05-03:00",
+    "cancelada_en": null
+  }
+}
+[HTTP 201]
+
+### 8. Solicitante vacío (espera HTTP 400 SOLICITANTE_VACIO)
+$ curl -X POST /api/reservas -d {"unidad":"MUL-01","solicitante":"   ","inicio":"2030-06-10T13:00","fin":"2030-06-10T14:00"}
+{
+  "error": {
+    "codigo": "SOLICITANTE_VACIO",
+    "mensaje": "El solicitante no puede estar vacío ni ser solo espacios."
+  }
+}
+[HTTP 400]
+
+### 9. Cancelar la reserva #1 (espera HTTP 200, conserva id y datos)
+$ curl -X POST /api/reservas/1/cancelar
+{
+  "reserva": {
+    "id": 1,
+    "unidad": "MIC-01",
+    "solicitante": "Ana Díaz",
+    "inicio": "2030-06-10T10:00:00-03:00",
+    "fin": "2030-06-10T11:00:00-03:00",
+    "estado": "cancelada",
+    "creada_en": "2026-10-25T16:56:05-03:00",
+    "cancelada_en": "2026-10-25T16:56:05-03:00"
+  }
+}
+[HTTP 200]
+
+### 10. Disponibilidad tras cancelar: el intervalo vuelve a estar libre
+$ curl -X GET /api/disponibilidad?unidad=MIC-01&inicio=2030-06-10T10:00&fin=2030-06-10T11:00
+{
+  "unidad": {
+    "id": "MIC-01",
+    "equipo": "Microscopio digital"
+  },
+  "inicio": "2030-06-10T10:00:00-03:00",
+  "fin": "2030-06-10T11:00:00-03:00",
+  "disponible": true,
+  "conflictos": []
+}
+[HTTP 200]
+
+### 11. Historial antes de detener el proceso
+$ curl -X GET /api/reservas
+{
+  "reservas": [
+    {
+      "id": 1,
+      "unidad": "MIC-01",
+      "solicitante": "Ana Díaz",
+      "inicio": "2030-06-10T10:00:00-03:00",
+      "fin": "2030-06-10T11:00:00-03:00",
+      "estado": "cancelada",
+      "creada_en": "2026-10-25T16:56:05-03:00",
+      "cancelada_en": "2026-10-25T16:56:05-03:00"
+    },
+    {
+      "id": 3,
+      "unidad": "MIC-02",
+      "solicitante": "Carla Nuñez",
+      "inicio": "2030-06-10T10:00:00-03:00",
+      "fin": "2030-06-10T11:00:00-03:00",
+      "estado": "activa",
+      "creada_en": "2026-10-25T16:56:05-03:00",
+      "cancelada_en": null
+    },
+    {
+      "id": 2,
+      "unidad": "MIC-01",
+      "solicitante": "Bruno Sáez",
+      "inicio": "2030-06-10T11:00:00-03:00",
+      "fin": "2030-06-10T12:00:00-03:00",
+      "estado": "activa",
+      "creada_en": "2026-10-25T16:56:05-03:00",
+      "cancelada_en": null
+    }
+  ]
+}
+[HTTP 200]
+
+### 12. Detener el proceso (kill 385556) y volver a arrancar con el mismo archivo
+### 13. Historial tras el reinicio: siguen activas Y canceladas
+$ curl -X GET /api/reservas
+{
+  "reservas": [
+    {
+      "id": 1,
+      "unidad": "MIC-01",
+      "solicitante": "Ana Díaz",
+      "inicio": "2030-06-10T10:00:00-03:00",
+      "fin": "2030-06-10T11:00:00-03:00",
+      "estado": "cancelada",
+      "creada_en": "2026-10-25T16:56:05-03:00",
+      "cancelada_en": "2026-10-25T16:56:05-03:00"
+    },
+    {
+      "id": 3,
+      "unidad": "MIC-02",
+      "solicitante": "Carla Nuñez",
+      "inicio": "2030-06-10T10:00:00-03:00",
+      "fin": "2030-06-10T11:00:00-03:00",
+      "estado": "activa",
+      "creada_en": "2026-10-25T16:56:05-03:00",
+      "cancelada_en": null
+    },
+    {
+      "id": 2,
+      "unidad": "MIC-01",
+      "solicitante": "Bruno Sáez",
+      "inicio": "2030-06-10T11:00:00-03:00",
+      "fin": "2030-06-10T12:00:00-03:00",
+      "estado": "activa",
+      "creada_en": "2026-10-25T16:56:05-03:00",
+      "cancelada_en": null
+    }
+  ]
+}
+[HTTP 200]
+
+### 14. Contenido del archivo SQLite en disco
+(1, 'MIC-01', 'Ana Díaz', 'cancelada')
+(2, 'MIC-01', 'Bruno Sáez', 'activa')
+(3, 'MIC-02', 'Carla Nuñez', 'activa')
+### Listo: proceso 385618 queda detenido en la salida de este script.

@@ -1,0 +1,20 @@
+# Diagnóstico de la única corrección ocurrida durante el desarrollo
+# Fecha: 2026-10-25 · Python 3.14.8 · pytest 9.1.1
+# Script: docs/evidencia/diagnostico_correccion.py
+
+$ PYTHONPATH=src .venv/bin/python docs/evidencia/diagnostico_correccion.py
+
+Reservas creadas por el diagnóstico:
+  #1 MIC-01 Ana Díaz 2030-06-10T10:00 a 2030-06-10T11:00 activa
+  #2 MIC-02 Bruno Sáez 2030-06-10T10:00 a 2030-06-10T11:00 activa
+
+Afirmación ORIGINAL (la que falló):
+  disponibilidad('MIC-02', 10:00, 11:00) es True
+  valor real: False
+  -> la prueba era incorrecta: MIC-02 está ocupada por la reserva que
+     la MISMA prueba acababa de crear; el código se comporta bien.
+
+Corrección aplicada (las afirmaciones que quedaron):
+  disponibilidad('MIC-02', 10:00, 11:00) = False  # ocupada por su propia reserva
+  disponibilidad('MIC-02', 11:00, 12:00) = True  # límite consecutivo
+  disponibilidad('OSC-01', 10:00, 11:00) = True  # otra unidad libre
