@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reservas de laboratorio</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Reservas de unidades de laboratorio</h1>
+    <p class="subtitulo">
+      Zona horaria <strong>America/Argentina/Buenos_Aires (UTC−3)</strong> ·
+      formato <code>AAAA-MM-DDTHH:MM</code> · una unidad por reserva
+    </p>
+  </header>
+
+  <main>
+    <section class="panel" id="panel-inventario">
+      <h2>Inventario precargado</h2>
+      <ul id="lista-unidades" class="chips">
+        <li class="cargando">Cargando inventario…</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Nueva reserva</h2>
+      <form id="form-reserva" autocomplete="off">
+        <label>
+          Unidad
+          <select id="campo-unidad" required></select>
+        </label>
+        <label>
+          Solicitante
+          <input id="campo-solicitante" type="text" placeholder="Ej.: Laboratorio Vega"
+                 maxlength="120" required>
+        </label>
+        <label>
+          Inicio
+          <input id="campo-inicio" type="datetime-local" required>
+        </label>
+        <label>
+          Fin
+          <input id="campo-fin" type="datetime-local" required>
+        </label>
+        <div class="acciones">
+          <button type="button" id="btn-disponibilidad" class="secundario">
+            Consultar disponibilidad
+          </button>
+          <button type="submit" id="btn-reservar">Reservar</button>
+        </div>
+      </form>
+
+      <div id="resultado" class="resultado oculto" role="status" aria-live="polite"></div>
+      <div id="error" class="error oculto" role="alert" aria-live="assertive"></div>
+    </section>
+
+    <section class="panel">
+      <div class="cabecera-tabla">
+        <h2>Reservas registradas</h2>
+        <button type="button" id="btn-actualizar" class="secundario">Actualizar</button>
+      </div>
+      <table id="tabla-reservas">
+        <thead>
+          <tr>
+            <th>#</th><th>Unidad</th><th>Solicitante</th>
+            <th>Inicio</th><th>Fin</th><th>Estado</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-reservas">
+          <tr><td colspan="7" class="cargando">Sin datos todavía.</td></tr>
+        </tbody>
+      </table>
+      <p class="nota">
+        Una reserva cancelada conserva su identificador y sus datos, pero deja de
+        bloquear el intervalo.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Aplicación local · sin autenticación ni notificaciones · datos en SQLite</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
