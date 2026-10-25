@@ -1,0 +1,17 @@
+# Entornos virtuales
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Datos de la aplicación (regenerables; borrarlos borra las reservas)
+data/
+
+# Editores y sistema
+.DS_Store
+.idea/
+.vscode/

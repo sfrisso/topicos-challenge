@@ -1,0 +1,9 @@
+{
+  "unidades": [
+    { "id": "MIC-01", "equipo": "Microscopio digital" },
+    { "id": "MIC-02", "equipo": "Microscopio digital" },
+    { "id": "OSC-01", "equipo": "Osciloscopio" },
+    { "id": "MUL-01", "equipo": "Multímetro" },
+    { "id": "FUE-01", "equipo": "Fuente de alimentación" }
+  ]
+}
